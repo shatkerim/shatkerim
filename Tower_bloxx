@@ -1,0 +1,133 @@
+import javafx.animation.AnimationTimer;
+import javafx.application.Application;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+import java.util.ArrayList;
+
+public class TowerBloxx extends Application {
+
+    private static final int WIDTH = 640;
+    private static final int HEIGHT = 480;
+    private static final int BLOCK_SIZE = 20;
+    private static final int BLOCK_SPEED = 2;
+
+    private int score;
+    private int level;
+    private Tower tower;
+    private Block currentBlock;
+    private boolean isGameOver;
+
+    private class Block {
+        private int size;
+        private Color color;
+        private int x;
+        private int y;
+        private int velocity;
+
+        public Block(int size, Color color) {
+            this.size = size;
+            this.color = color;
+            this.velocity = BLOCK_SPEED;
+            this.x = WIDTH / 2 - size / 2;
+            this.y = 0;
+        }
+
+        public void move() {
+            y += velocity;
+        }
+
+        public boolean collidesWithTower(Tower tower) {
+            for (Block block : tower.getBlocks()) {
+                if (Math.abs(x - block.getX()) < size && y - block.getY() < size) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void addToTower(Tower tower) {
+            tower.addBlock(this);
+        }
+
+        public void draw(GraphicsContext gc) {
+            gc.setFill(color);
+            gc.fillRect(x, y, size, size);
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getY() {
+            return y;
+        }
+    }
+
+    private class Tower {
+        private ArrayList<Block> blocks;
+
+        public Tower() {
+            this.blocks = new ArrayList<>();
+        }
+
+        public void addBlock(Block block) {
+            blocks.add(block);
+        }
+
+        public void removeBlocksAbove(int height) {
+            ArrayList<Block> blocksToRemove = new ArrayList<>();
+            for (Block block : blocks) {
+                if (block.getY() + block.getSize() < height) {
+                    blocksToRemove.add(block);
+                }
+            }
+            blocks.removeAll(blocksToRemove);
+        }
+
+        public ArrayList<Block> getBlocks() {
+            return blocks;
+        }
+
+        public void draw(GraphicsContext gc) {
+            for (Block block : blocks) {
+                block.draw(gc);
+            }
+        }
+
+        public int getHeight() {
+            if (blocks.size() == 0) {
+                return 0;
+            }
+            Block topBlock = blocks.get(blocks.size() - 1);
+            return topBlock.getY() + topBlock.getSize();
+        }
+
+        public boolean isCollapsing() {
+            for (Block block : blocks) {
+                if (block.getY() + block.getSize() > HEIGHT) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        Group root = new Group();
+        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        Canvas canvas = new Canvas(WIDTH, HEIGHT);
+        root.getChildren().add(canvas);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+
+        scene.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
+           
